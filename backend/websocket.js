@@ -182,7 +182,14 @@ function setupWebSocket(server) {
     const timeTaken = (Date.now() - session.questionStartTime) / 1000;
     let isCorrect = false;
     if (question.type === 'text') {
-        isCorrect = question.correctAnswers.some(a => a.toLowerCase() === answer.trim().toLowerCase());
+        const a = typeof answer === 'string' ? answer : String(answer ?? '');
+        isCorrect = question.correctAnswers.some(c => c.toLowerCase() === a.trim().toLowerCase());
+    } else if (question.type === 'multiple') {
+        const submitted = Array.isArray(answer) ? answer : [answer];
+        const submittedSet = new Set(submitted);
+        const correctSet = new Set(question.correctAnswers);
+        isCorrect = submittedSet.size === correctSet.size &&
+            [...correctSet].every(c => submittedSet.has(c));
     } else {
         isCorrect = question.correctAnswers.includes(answer);
     }
