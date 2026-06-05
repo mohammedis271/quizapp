@@ -144,7 +144,7 @@ function setupWebSocket(server) {
     session.participants.forEach(p => p.hasAnsweredCurrent = false);
     session.questionStartTime = Date.now();
     const question = session.quiz.questions[session.currentQuestionIndex];
-    const sanitizedQuestion = { ...question.toObject(), correctAnswers: undefined };
+    const sanitizedQuestion = sanitizeQuestion(question);
     broadcastToRoom(roomId, {
       type: 'NEW_QUESTION',
       question: sanitizedQuestion,
