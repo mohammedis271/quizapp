@@ -19,7 +19,7 @@ export default {
     themes: [
       {
         quizfun: {
-          "primary": "#a855f7",
+          "primary": "#7c3aed",
           "primary-content": "#ffffff",
           "secondary": "#ec4899",
           "secondary-content": "#ffffff",
@@ -31,13 +31,13 @@ export default {
           "base-200": "#f5e1ff",
           "base-300": "#e9c9ff",
           "base-content": "#1f1147",
-          "info": "#38bdf8",
+          "info": "#0284c7",
           "info-content": "#ffffff",
-          "success": "#22c55e",
+          "success": "#16a34a",
           "success-content": "#ffffff",
-          "warning": "#f97316",
+          "warning": "#ea580c",
           "warning-content": "#ffffff",
-          "error": "#ef4444",
+          "error": "#dc2626",
           "error-content": "#ffffff",
           "--rounded-box": "1.5rem",
           "--rounded-btn": "1rem",
