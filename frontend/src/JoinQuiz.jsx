@@ -51,7 +51,7 @@ export default function JoinQuiz() {
               onChange={(e) => setUsername(e.target.value)}
               required
             />
-            <button type="submit" className="btn btn-primary btn-lg w-full gap-2 wiggle bg-violet-400">
+            <button type="submit" className="btn btn-primary btn-lg w-full gap-2 wiggle bg-violet-700 text-slate-50">
               <Rocket size={22} /> Enter
             </button>
           </form>
