@@ -2,6 +2,8 @@
 
 QuizApp is a full-stack, real-time quiz platform similar to Kahoot. It allows admins to create custom quizzes with images and various question types, and participants to join and compete in real-time from their mobile devices.
 
+<img width="1282" height="873" alt="image" src="https://github.com/user-attachments/assets/ef726704-08c6-4b57-91a2-3e50cdcf89c7" />
+
 ## Features
 
 - **Real-time Gameplay:** Powered by native WebSockets for instant interaction.
