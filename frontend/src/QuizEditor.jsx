@@ -165,33 +165,51 @@ export default function QuizEditor() {
                 </div>
 
                 {q.type === 'multiple' && (
-                  <div className="grid sm:grid-cols-2 gap-2">
-                    {q.options.map((opt, oIndex) => {
-                      const colors = ['bg-error/10', 'bg-info/10', 'bg-warning/10', 'bg-success/10'];
-                      return (
-                        <div key={oIndex} className={`flex gap-2 items-center p-2 rounded-xl ${colors[oIndex]}`}>
-                          <input
-                            type="radio"
-                            name={`correct-${qIndex}`}
-                            className="radio radio-primary"
-                            checked={q.correctAnswers[0] === opt && opt !== ''}
-                            onChange={() => updateQuestion(qIndex, 'correctAnswers', [opt])}
-                          />
-                          <input
-                            type="text"
-                            className="input input-bordered input-sm flex-1"
-                            placeholder={`Option ${oIndex + 1}`}
-                            value={opt}
-                            onChange={(e) => {
-                              const n = [...q.options];
-                              n[oIndex] = e.target.value;
-                              updateQuestion(qIndex, 'options', n);
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <>
+                    <p className="text-xs opacity-60 -mb-1">Tick all correct answers (one or more)</p>
+                    <div className="grid sm:grid-cols-2 gap-2">
+                      {q.options.map((opt, oIndex) => {
+                        const colors = ['bg-error/10', 'bg-info/10', 'bg-warning/10', 'bg-success/10'];
+                        const checked = opt !== '' && q.correctAnswers.includes(opt);
+                        return (
+                          <div key={oIndex} className={`flex gap-2 items-center p-2 rounded-xl ${colors[oIndex]}`}>
+                            <input
+                              type="checkbox"
+                              className="checkbox checkbox-primary"
+                              checked={checked}
+                              disabled={opt === ''}
+                              onChange={(e) => {
+                                const next = e.target.checked
+                                  ? [...q.correctAnswers.filter(a => a !== opt), opt]
+                                  : q.correctAnswers.filter(a => a !== opt);
+                                updateQuestion(qIndex, 'correctAnswers', next);
+                              }}
+                            />
+                            <input
+                              type="text"
+                              className="input input-bordered input-sm flex-1"
+                              placeholder={`Option ${oIndex + 1}`}
+                              value={opt}
+                              onChange={(e) => {
+                                const newVal = e.target.value;
+                                const n = [...q.options];
+                                const oldVal = n[oIndex];
+                                n[oIndex] = newVal;
+                                updateQuestion(qIndex, 'options', n);
+                                // Keep correctAnswers in sync if option text changes
+                                if (q.correctAnswers.includes(oldVal)) {
+                                  const updated = q.correctAnswers
+                                    .map(a => (a === oldVal ? newVal : a))
+                                    .filter(a => a !== '');
+                                  updateQuestion(qIndex, 'correctAnswers', updated);
+                                }
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
 
                 {q.type === 'boolean' && (
