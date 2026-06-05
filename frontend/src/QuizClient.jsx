@@ -116,7 +116,7 @@ export default function QuizClient() {
               <button
                 key={opt}
                 onClick={() => submitAnswer(opt)}
-                className={`btn btn-lg ${OPTION_COLORS[i % 4]} text-white font-display text-xl normal-case`}
+                className={`btn btn-lg ${OPTION_COLORS[i % 4]} text-white border-0 font-display text-xl normal-case shadow-lg`}
               >
                 {opt}
               </button>
