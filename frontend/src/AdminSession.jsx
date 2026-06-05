@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { Play, ArrowRight, Trophy, Users, Crown } from 'lucide-react';
 import useWebSocket from './useWebSocket';
 
-const ANSWER_COLORS = ['bg-error', 'bg-info', 'bg-warning', 'bg-success'];
+const ANSWER_COLORS = ['bg-rose-500', 'bg-sky-500', 'bg-amber-500', 'bg-emerald-500'];
 
 export default function AdminSession() {
   const { roomId } = useParams();
   const [searchParams] = useSearchParams();
   const quizId = searchParams.get('quizId');
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const { sendMessage, lastMessage, status: wsStatus } = useWebSocket(`${protocol}//${window.location.host}/ws`);
   const [status, setStatus] = useState('LOBBY');
   const [participants, setParticipants] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(null);
@@ -19,30 +18,33 @@ export default function AdminSession() {
   const [podium, setPodium] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
 
-  useEffect(() => {
-    if (lastMessage) {
-      switch (lastMessage.type) {
-        case 'ROOM_CREATED':
-          if (lastMessage.status) setStatus(lastMessage.status);
-          if (lastMessage.participants) setParticipants(lastMessage.participants);
-          break;
-        case 'PARTICIPANT_LIST': setParticipants(lastMessage.participants); break;
-        case 'NEW_QUESTION':
-          setCurrentQuestion(lastMessage.question);
-          setStatus('QUESTION');
-          setTimeLeft(lastMessage.question.timeLimit);
-          break;
-        case 'QUESTION_ENDED':
-          setStatus('REVEALED');
-          setLeaderboard(lastMessage.leaderboard);
-          break;
-        case 'QUIZ_FINISHED':
-          setStatus('FINISHED');
-          setPodium(lastMessage.podium);
-          break;
-      }
+  const handleMessage = useCallback((msg) => {
+    switch (msg.type) {
+      case 'ROOM_CREATED':
+        if (msg.status) setStatus(msg.status);
+        if (msg.participants) setParticipants(msg.participants);
+        break;
+      case 'PARTICIPANT_LIST': setParticipants(msg.participants); break;
+      case 'NEW_QUESTION':
+        setCurrentQuestion(msg.question);
+        setStatus('QUESTION');
+        setTimeLeft(msg.question.timeLimit);
+        break;
+      case 'QUESTION_ENDED':
+        setStatus('REVEALED');
+        setLeaderboard(msg.leaderboard);
+        break;
+      case 'QUIZ_FINISHED':
+        setStatus('FINISHED');
+        setPodium(msg.podium);
+        break;
     }
-  }, [lastMessage]);
+  }, []);
+
+  const { sendMessage, status: wsStatus } = useWebSocket(
+    `${protocol}//${window.location.host}/ws`,
+    handleMessage
+  );
 
   useEffect(() => {
     let t;
