@@ -1,15 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Check, X, Trophy, Hourglass, PartyPopper } from 'lucide-react';
 import useWebSocket from './useWebSocket';
 
-const OPTION_COLORS = ['btn-error', 'btn-info', 'btn-warning', 'btn-success'];
+const OPTION_COLORS = [
+  'bg-rose-500 hover:bg-rose-600',
+  'bg-sky-500 hover:bg-sky-600',
+  'bg-amber-500 hover:bg-amber-600',
+  'bg-emerald-500 hover:bg-emerald-600',
+];
 
 export default function QuizClient() {
   const { roomId } = useParams();
   const username = localStorage.getItem('username');
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const { sendMessage, lastMessage, status: wsStatus } = useWebSocket(`${protocol}//${window.location.host}/ws`);
   const [status, setStatus] = useState('JOINING');
   const [question, setQuestion] = useState(null);
   const [answer, setAnswer] = useState('');
@@ -17,32 +21,35 @@ export default function QuizClient() {
   const [isCorrect, setIsCorrect] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (lastMessage) {
-      switch (lastMessage.type) {
-        case 'JOINED': setStatus('LOBBY'); break;
-        case 'REJOINED':
-          setStatus(lastMessage.status === 'LOBBY' ? 'LOBBY' : (lastMessage.status === 'IN_PROGRESS' ? 'QUESTION' : lastMessage.status));
-          setScore(lastMessage.score);
-          if (lastMessage.question) setQuestion(lastMessage.question);
-          break;
-        case 'NEW_QUESTION':
-          setQuestion(lastMessage.question);
-          setStatus('QUESTION');
-          setAnswer('');
-          setIsCorrect(null);
-          break;
-        case 'ANSWER_RECEIVED':
-          setIsCorrect(lastMessage.isCorrect);
-          if (lastMessage.score !== undefined) setScore(lastMessage.score);
-          setStatus('ANSWERED');
-          break;
-        case 'QUESTION_ENDED': setStatus('ENDED'); break;
-        case 'QUIZ_FINISHED': setStatus('FINISHED'); break;
-        case 'ERROR': alert(lastMessage.message); break;
-      }
+  const handleMessage = useCallback((msg) => {
+    switch (msg.type) {
+      case 'JOINED': setStatus('LOBBY'); break;
+      case 'REJOINED':
+        setStatus(msg.status === 'LOBBY' ? 'LOBBY' : (msg.status === 'IN_PROGRESS' ? 'QUESTION' : msg.status));
+        setScore(msg.score);
+        if (msg.question) setQuestion(msg.question);
+        break;
+      case 'NEW_QUESTION':
+        setQuestion(msg.question);
+        setStatus('QUESTION');
+        setAnswer('');
+        setIsCorrect(null);
+        break;
+      case 'ANSWER_RECEIVED':
+        setIsCorrect(msg.isCorrect);
+        if (msg.score !== undefined) setScore(msg.score);
+        setStatus('ANSWERED');
+        break;
+      case 'QUESTION_ENDED': setStatus('ENDED'); break;
+      case 'QUIZ_FINISHED': setStatus('FINISHED'); break;
+      case 'ERROR': alert(msg.message); break;
     }
-  }, [lastMessage]);
+  }, []);
+
+  const { sendMessage, status: wsStatus } = useWebSocket(
+    `${protocol}//${window.location.host}/ws`,
+    handleMessage
+  );
 
   useEffect(() => {
     if (wsStatus === 'connected' && username) {
