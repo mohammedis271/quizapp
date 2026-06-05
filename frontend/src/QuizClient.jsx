@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Check, X, Trophy, Hourglass, PartyPopper } from 'lucide-react';
 import useWebSocket from './useWebSocket';
+
+const OPTION_COLORS = ['btn-error', 'btn-info', 'btn-warning', 'btn-success'];
+
 export default function QuizClient() {
   const { roomId } = useParams();
   const username = localStorage.getItem('username');
@@ -12,52 +16,170 @@ export default function QuizClient() {
   const [score, setScore] = useState(0);
   const [isCorrect, setIsCorrect] = useState(null);
   const navigate = useNavigate();
+
   useEffect(() => {
     if (lastMessage) {
       switch (lastMessage.type) {
         case 'JOINED': setStatus('LOBBY'); break;
         case 'REJOINED':
-            setStatus(lastMessage.status === 'LOBBY' ? 'LOBBY' : (lastMessage.status === 'IN_PROGRESS' ? 'QUESTION' : lastMessage.status));
-            setScore(lastMessage.score);
-            if (lastMessage.question) setQuestion(lastMessage.question);
-            break;
-        case 'NEW_QUESTION': setQuestion(lastMessage.question); setStatus('QUESTION'); setAnswer(''); setIsCorrect(null); break;
+          setStatus(lastMessage.status === 'LOBBY' ? 'LOBBY' : (lastMessage.status === 'IN_PROGRESS' ? 'QUESTION' : lastMessage.status));
+          setScore(lastMessage.score);
+          if (lastMessage.question) setQuestion(lastMessage.question);
+          break;
+        case 'NEW_QUESTION':
+          setQuestion(lastMessage.question);
+          setStatus('QUESTION');
+          setAnswer('');
+          setIsCorrect(null);
+          break;
         case 'ANSWER_RECEIVED':
-            setIsCorrect(lastMessage.isCorrect);
-            if (lastMessage.score !== undefined) setScore(lastMessage.score);
-            setStatus('ANSWERED');
-            break;
+          setIsCorrect(lastMessage.isCorrect);
+          if (lastMessage.score !== undefined) setScore(lastMessage.score);
+          setStatus('ANSWERED');
+          break;
         case 'QUESTION_ENDED': setStatus('ENDED'); break;
         case 'QUIZ_FINISHED': setStatus('FINISHED'); break;
         case 'ERROR': alert(lastMessage.message); break;
       }
     }
   }, [lastMessage]);
+
   useEffect(() => {
     if (wsStatus === 'connected' && username) {
-        sendMessage({ type: 'REJOIN', roomId, username });
+      sendMessage({ type: 'REJOIN', roomId, username });
     }
   }, [wsStatus, sendMessage, roomId, username]);
-  const submitAnswer = (val) => { setAnswer(val); sendMessage({ type: 'SUBMIT_ANSWER', roomId, username, answer: val }); };
-  if (status === 'JOINING') return <div className="p-8 text-center">Connecting...</div>;
-  if (status === 'LOBBY') return <div className="min-h-screen flex flex-col items-center justify-center bg-purple-600 text-white"><h1 className="text-3xl font-bold mb-4">You're in!</h1><div className="font-mono text-2xl">{username}</div></div>;
-  if (status === 'QUESTION' && question) return (
-    <div className="min-h-screen flex flex-col bg-gray-100">
-        <div className="bg-white p-4 flex justify-between font-bold"><span>{username}</span><span className="bg-purple-600 text-white px-3 py-1 rounded-full">{score}</span></div>
-        <div className="p-4 flex-1 flex flex-col">
-            <h2 className="text-2xl font-bold mb-4 text-center">{question.questionText}</h2>
-            {question.image && <img src={question.image} className="max-h-48 mx-auto mb-4" />}
-            <div className="grid grid-cols-1 gap-3 mt-auto">
-                {(question.type === 'multiple' ? question.options : (question.type === 'boolean' ? ['True', 'False'] : [])).map(opt => (
-                    <button key={opt} onClick={() => submitAnswer(opt)} className="bg-white border-2 p-6 rounded-xl text-xl font-bold">{opt}</button>
-                ))}
-                {question.type === 'text' && <><input type="text" className="p-4 border-2 rounded-xl text-xl" value={answer} onChange={(e) => setAnswer(e.target.value)} /><button onClick={() => submitAnswer(answer)} className="bg-purple-600 text-white p-4 rounded-xl text-xl font-bold">Submit</button></>}
-            </div>
+
+  const submitAnswer = (val) => {
+    setAnswer(val);
+    sendMessage({ type: 'SUBMIT_ANSWER', roomId, username, answer: val });
+  };
+
+  if (status === 'JOINING') {
+    return (
+      <div className="min-h-screen bg-fun flex flex-col items-center justify-center text-primary-content gap-4">
+        <span className="loading loading-ball loading-lg"></span>
+        <p className="font-display text-2xl">Connecting...</p>
+      </div>
+    );
+  }
+
+  if (status === 'LOBBY') {
+    return (
+      <div className="min-h-screen bg-fun flex flex-col items-center justify-center p-6 text-primary-content">
+        <PartyPopper size={64} className="animate-bounce" />
+        <h1 className="font-display text-5xl font-bold mt-4">You're in!</h1>
+        <div className="card bg-base-100 text-base-content shadow-2xl mt-6 animate-pop">
+          <div className="card-body items-center">
+            <p className="text-sm opacity-60">Playing as</p>
+            <div className="font-display text-3xl font-bold">{username}</div>
+            <div className="badge badge-primary badge-lg">Room {roomId}</div>
+          </div>
         </div>
-    </div>
-  );
-  if (status === 'ANSWERED') return <div className={`min-h-screen flex flex-col items-center justify-center text-white ${isCorrect ? 'bg-green-500' : 'bg-red-500'}`}><h1 className="text-4xl font-bold">{isCorrect ? 'CORRECT!' : 'WRONG'}</h1></div>;
-  if (status === 'ENDED') return <div className="min-h-screen flex flex-col items-center justify-center bg-blue-500 text-white"><h1 className="text-4xl font-bold">Question Ended</h1></div>;
-  if (status === 'FINISHED') return <div className="min-h-screen flex flex-col items-center justify-center bg-yellow-500 text-white"><h1 className="text-4xl font-bold">Quiz Finished!</h1><p className="text-2xl">Score: {score}</p><button onClick={() => navigate('/')} className="mt-8 bg-white text-yellow-600 px-6 py-2 rounded-full font-bold">Close</button></div>;
+        <p className="mt-6 opacity-80">Waiting for the host to start...</p>
+      </div>
+    );
+  }
+
+  if (status === 'QUESTION' && question) {
+    const opts = question.type === 'multiple' ? question.options
+      : question.type === 'boolean' ? ['True', 'False'] : [];
+    return (
+      <div className="min-h-screen bg-base-200 flex flex-col">
+        <div className="navbar bg-base-100 shadow-md">
+          <div className="flex-1 px-2 font-display font-bold">{username}</div>
+          <div className="flex-none">
+            <div className="badge badge-primary badge-lg gap-1">
+              <Trophy size={14} /> {score}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 p-4 flex flex-col gap-4 max-w-2xl mx-auto w-full">
+          <div className="card bg-base-100 shadow-xl animate-pop">
+            <div className="card-body items-center text-center">
+              <h2 className="font-display text-2xl font-bold">{question.questionText}</h2>
+              {question.image && (
+                <img src={question.image} className="max-h-48 rounded-xl mt-2" alt="" />
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-3 mt-auto">
+            {opts.map((opt, i) => (
+              <button
+                key={opt}
+                onClick={() => submitAnswer(opt)}
+                className={`btn btn-lg ${OPTION_COLORS[i % 4]} text-white font-display text-xl normal-case`}
+              >
+                {opt}
+              </button>
+            ))}
+            {question.type === 'text' && (
+              <>
+                <input
+                  type="text"
+                  className="input input-bordered input-lg input-primary text-xl"
+                  value={answer}
+                  onChange={(e) => setAnswer(e.target.value)}
+                  placeholder="Your answer..."
+                />
+                <button
+                  onClick={() => submitAnswer(answer)}
+                  className="btn btn-primary btn-lg font-display"
+                >
+                  Submit
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'ANSWERED') {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center text-white p-6 ${isCorrect ? 'bg-success' : 'bg-error'}`}>
+        <div className="animate-pop flex flex-col items-center">
+          {isCorrect ? <Check size={96} strokeWidth={3} /> : <X size={96} strokeWidth={3} />}
+          <h1 className="font-display text-5xl font-bold mt-4">
+            {isCorrect ? 'CORRECT!' : 'WRONG'}
+          </h1>
+          <div className="badge badge-lg mt-6 bg-white/20 border-0 text-white gap-1">
+            <Trophy size={14} /> {score}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'ENDED') {
+    return (
+      <div className="min-h-screen bg-info flex flex-col items-center justify-center text-info-content gap-3">
+        <Hourglass size={64} className="animate-pulse" />
+        <h1 className="font-display text-4xl font-bold">Question ended</h1>
+        <p className="opacity-80">Hold tight for the next one...</p>
+      </div>
+    );
+  }
+
+  if (status === 'FINISHED') {
+    return (
+      <div className="min-h-screen bg-fun flex flex-col items-center justify-center text-primary-content p-6">
+        <Trophy size={72} className="text-accent animate-bounce" />
+        <h1 className="font-display text-5xl font-bold mt-4">Quiz Finished!</h1>
+        <div className="card bg-base-100 text-base-content shadow-2xl mt-6 animate-pop">
+          <div className="card-body items-center">
+            <p className="text-sm opacity-60">Final score</p>
+            <div className="font-display text-5xl font-bold text-primary">{score}</div>
+          </div>
+        </div>
+        <button onClick={() => navigate('/')} className="btn btn-accent btn-lg mt-8">
+          Done
+        </button>
+      </div>
+    );
+  }
+
   return null;
 }
