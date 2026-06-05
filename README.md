@@ -39,7 +39,7 @@ QuizApp is a full-stack, real-time quiz platform similar to Kahoot. It allows ad
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd bc_kahoot
+   cd quizapp
    ```
 
 2. **Run the application using Docker Compose:**
