@@ -1,16 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
-export default function useWebSocket(url) {
+import { useState, useEffect, useCallback, useRef } from 'react';
+
+export default function useWebSocket(url, onMessage) {
   const [ws, setWs] = useState(null);
-  const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState('connecting');
+  const handlerRef = useRef(onMessage);
+
+  useEffect(() => { handlerRef.current = onMessage; }, [onMessage]);
+
   useEffect(() => {
     const socket = new WebSocket(url);
     socket.onopen = () => setStatus('connected');
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      setMessages((prev) => [...prev, data]);
+      try {
+        const data = JSON.parse(event.data);
+        // Dispatch immediately so every message is processed (not just the last
+        // one in a render batch).
+        handlerRef.current?.(data);
+      } catch (e) {
+        console.error('Bad WS message', e);
+      }
     };
     socket.onclose = () => setStatus('disconnected');
+    socket.onerror = () => setStatus('disconnected');
     setWs(socket);
     return () => socket.close();
   }, [url]);
@@ -22,5 +33,6 @@ export default function useWebSocket(url) {
     }
     return false;
   }, [ws]);
-  return { sendMessage, messages, status, lastMessage: messages[messages.length - 1] };
+
+  return { sendMessage, status };
 }
