@@ -3,6 +3,12 @@ const Quiz = require('./models/Quiz');
 
 const sessions = new Map();
 
+function sanitizeQuestion(question) {
+  const obj = question.toObject ? question.toObject() : { ...question };
+  const correctCount = Array.isArray(obj.correctAnswers) ? obj.correctAnswers.length : 0;
+  return { ...obj, correctAnswers: undefined, correctCount };
+}
+
 function setupWebSocket(server) {
   const wss = new WebSocket.Server({ server });
 
