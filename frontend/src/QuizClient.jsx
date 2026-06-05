@@ -17,6 +17,7 @@ export default function QuizClient() {
   const [status, setStatus] = useState('JOINING');
   const [question, setQuestion] = useState(null);
   const [answer, setAnswer] = useState('');
+  const [selected, setSelected] = useState([]);
   const [score, setScore] = useState(0);
   const [isCorrect, setIsCorrect] = useState(null);
   const navigate = useNavigate();
