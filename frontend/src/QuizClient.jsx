@@ -34,6 +34,7 @@ export default function QuizClient() {
         setQuestion(msg.question);
         setStatus('QUESTION');
         setAnswer('');
+        setSelected([]);
         setIsCorrect(null);
         break;
       case 'ANSWER_RECEIVED':
