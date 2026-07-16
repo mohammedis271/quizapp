@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/.git
+**/.github
+**/.env
+**/.env.*
+**/uploads
+**/*.md
+**/.lovable
+**/bun.lock
+frontend/bun.lock
+**/.vite
+**/coverage
+**/.DS_Store

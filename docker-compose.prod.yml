@@ -1,0 +1,39 @@
+# Production stack for https://quiz.mohammed-ismail.co.za
+# Pulls the single combined FE+BE image from your private registry.
+#
+# On the server, set IMAGE in a .env next to this file, e.g.:
+#   IMAGE=registry.example.com/quizapp:latest
+#   JWT_SECRET=change-me-to-a-long-random-string
+
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - quiz
+
+  app:
+    image: ${IMAGE}
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/quizapp
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: "5000"
+    volumes:
+      - quiz-uploads:/app/uploads
+    depends_on:
+      - mongodb
+    networks:
+      - quiz
+
+volumes:
+  mongo-data:
+  quiz-uploads:
+
+networks:
+  quiz:
+    driver: bridge
