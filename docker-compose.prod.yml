@@ -1,39 +1,61 @@
 # Production stack for https://quiz.mohammed-ismail.co.za
-# Pulls the single combined FE+BE image from your private registry.
 #
-# On the server, set IMAGE in a .env next to this file, e.g.:
-#   IMAGE=registry.example.com/quizapp:latest
+# .env next to this file should include at least:
+#   IMAGE=your-registry/quizapp:latest
 #   JWT_SECRET=change-me-to-a-long-random-string
 
 services:
-  mongodb:
-    image: mongo:7
-    restart: unless-stopped
-    volumes:
-      - mongo-data:/data/db
-    networks:
-      - quiz
-
-  app:
+  quizapp:
     image: ${IMAGE}
+    container_name: quizapp
     restart: unless-stopped
-    ports:
-      - "5000:5000"
+    env_file: .env
     environment:
       MONGODB_URI: mongodb://mongodb:27017/quizapp
-      JWT_SECRET: ${JWT_SECRET}
       PORT: "5000"
     volumes:
       - quiz-uploads:/app/uploads
     depends_on:
       - mongodb
     networks:
-      - quiz
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+
+      # HTTP router (redirects to HTTPS)
+      - "traefik.http.routers.quizapp.entrypoints=http"
+      - "traefik.http.routers.quizapp.rule=Host(`quiz.mohammed-ismail.co.za`)"
+      - "traefik.http.routers.quizapp.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+      # HTTPS router
+      - "traefik.http.routers.quizapp-secure.entrypoints=https"
+      - "traefik.http.routers.quizapp-secure.rule=Host(`quiz.mohammed-ismail.co.za`)"
+      - "traefik.http.routers.quizapp-secure.tls=true"
+      - "traefik.http.routers.quizapp-secure.service=quizapp-service"
+
+      # App listens on 5000
+      - "traefik.http.services.quizapp-service.loadbalancer.server.port=5000"
+
+      # Traefik metadata
+      - "traefik.docker.network=proxy"
+
+  mongodb:
+    image: mongo:7
+    container_name: quizapp-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - internal
 
 volumes:
   mongo-data:
   quiz-uploads:
 
 networks:
-  quiz:
+  proxy:
+    external: true
+  internal:
     driver: bridge

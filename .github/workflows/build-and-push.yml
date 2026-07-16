@@ -46,5 +46,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
+          # Smaller attestations; large layer PUTs still need Cloudflare DNS-only on the registry host
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max

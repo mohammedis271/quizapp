@@ -1,16 +1,16 @@
 # Stage 1: Build Frontend
-FROM node:24 AS frontend-build
+FROM node:24-bookworm-slim AS frontend-build
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: Build Backend and serve Frontend
-FROM node:24
+# Stage 2: Backend + static frontend (single image)
+FROM node:24-bookworm-slim
 WORKDIR /app
 COPY backend/package*.json ./
-RUN npm install
+RUN npm ci --omit=dev
 COPY backend/ ./
 COPY --from=frontend-build /app/frontend/dist ./public
 
